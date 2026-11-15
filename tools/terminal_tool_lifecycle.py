@@ -44,22 +44,17 @@ def _create_configured_env(
 
 
 def _cleanup_env(env: Any, *, force_remove: Optional[bool] = None) -> None:
-    """Tear down one environment via cleanup()/stop()/terminate(), whichever it has.
+    """Tear down one environment via its ``cleanup()`` (required of every backend).
 
     ``force_remove`` is forwarded to ``cleanup()`` only when given and the backend's
     signature accepts it (``DockerEnvironment``, issue #20561; other backends don't).
     Shared by ``cleanup_vm``, the idle reaper and the prompt-time backend probe so
     the signature check lives in one place.
     """
-    if hasattr(env, 'cleanup'):
-        if force_remove is not None and "force_remove" in inspect.signature(env.cleanup).parameters:
-            env.cleanup(force_remove=force_remove)
-        else:
-            env.cleanup()
-    elif hasattr(env, 'stop'):
-        env.stop()
-    elif hasattr(env, 'terminate'):
-        env.terminate()
+    if force_remove is not None and "force_remove" in inspect.signature(env.cleanup).parameters:
+        env.cleanup(force_remove=force_remove)
+    else:
+        env.cleanup()
 
 
 def _settle_env_processes(env: Any) -> None:
