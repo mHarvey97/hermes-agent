@@ -56,7 +56,7 @@ from tools.delegate_tool_toolsets import (
     DELEGATE_BLOCKED_TOOLS, _expand_parent_toolsets, _resolve_child_toolsets, _strip_blocked_tools,
 )
 from tools.delegate_tool_results import (
-    _apply_summary_budget, _build_child_preserving_parent_tools, _run_child_lifecycle, _summarize_tool_arguments,
+    _apply_summary_budget, _run_child_lifecycle, _summarize_tool_arguments,
 )
 
 _ROLES = frozenset({"leaf", "orchestrator"})
@@ -505,7 +505,7 @@ def _build_children(
         if _task_schema is not None:
             _child_context = append_output_contract(_child_context, _task_schema)
         try:
-            child = _build_child_preserving_parent_tools(
+            child = _build_child_agent(
                 task_index=i, goal=t["goal"], context=_child_context, max_iterations=max_iterations,
                 task_count=len(task_list), parent_agent=parent_agent, role=_normalize_role(t.get("role") or top_role),
                 **_route_overrides(route),

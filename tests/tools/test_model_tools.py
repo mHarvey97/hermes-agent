@@ -27,6 +27,17 @@ class TestHandleFunctionCall:
         assert "error" in result
         assert "totally_fake_tool_xyz" in result["error"]
 
+    def test_execute_code_sandbox_grant_comes_only_from_the_caller(self):
+        """Another session's tool-definitions build must not narrow or widen this call's sandbox:
+        no ``enabled_tools`` means every sandbox tool, an explicit list is used as given."""
+        from model_tools import get_tool_definitions
+
+        get_tool_definitions(enabled_toolsets=["web"], quiet_mode=True)
+        with patch("tools.code_execution_tool.execute_code", return_value='{"status": "success"}') as run:
+            handle_function_call("execute_code", {"code": "print(1)"}, task_id="t1")
+            handle_function_call("execute_code", {"code": "print(1)"}, task_id="t1", enabled_tools=["terminal"])
+        assert [c.kwargs["enabled_tools"] for c in run.call_args_list] == [None, ["terminal"]]
+
 
 
     def test_post_tool_call_receives_non_negative_integer_duration_ms(self):

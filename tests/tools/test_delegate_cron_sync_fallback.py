@@ -73,7 +73,6 @@ def _make_real_child():
     child._delegate_depth = 1
     child._delegate_role = "leaf"
     child._subagent_id = "subagent-86632"
-    child._delegate_saved_tool_names = []
     # Arm the post-turn skill review trigger (finalize_turn's
     # _should_review_skills gate) exactly as a long child run would.
     child._skill_nudge_interval = 1

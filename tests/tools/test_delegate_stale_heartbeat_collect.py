@@ -23,7 +23,6 @@ class _Child:
     def __init__(self, session_id: str) -> None:
         self.tool_progress_callback = None
         self._credential_pool = None
-        self._delegate_saved_tool_names = []
         self._delegate_role = "leaf"
         self._delegate_depth = 1
         self._subagent_id = None

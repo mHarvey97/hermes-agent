@@ -38,7 +38,6 @@ class _ControlledChild(_Parent):
         self.session_id = "capacity-interrupt-child"
         self._delegate_role = "leaf"
         self._delegate_depth = 1
-        self._delegate_saved_tool_names = []
         self._credential_pool = None
         self._subagent_id = None
         self.tool_progress_callback = None

@@ -253,7 +253,7 @@ def test_sequential_tool_interrupt_hides_lifecycle_cancel_detail(tmp_path, monke
 
     monkeypatch.setenv("HERMES_CONCURRENT_TOOL_TIMEOUT_S", "30")
     monkeypatch.setattr(
-        "tools.delegate_tool._build_child_preserving_parent_tools",
+        "tools.delegate_tool._build_child_agent",
         lambda **_kwargs: agent,
     )
     monkeypatch.setattr("tools.delegate_tool._run_child_lifecycle", _run_child)

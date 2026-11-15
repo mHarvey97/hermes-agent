@@ -310,20 +310,6 @@ def _apply_summary_budget(results: list[dict[str, Any]], parent_agent) -> None:
 
 _PARENT_FINALIZATION_LOCK_GUARD = threading.Lock()
 _PARENT_FINALIZATION_FALLBACK_LOCK = threading.RLock()
-_CHILD_CONSTRUCTION_LOCK = threading.RLock()
-
-def _build_child_preserving_parent_tools(**kwargs):
-    """Build a child without leaking its resolved toolset into the parent."""
-    from tools.delegate_tool import _build_child_agent
-    import model_tools
-    with _CHILD_CONSTRUCTION_LOCK:
-        parent_tool_names = list(model_tools._last_resolved_tool_names)
-        try:
-            child = _build_child_agent(**kwargs)
-        finally:
-            model_tools._last_resolved_tool_names = parent_tool_names
-    child._delegate_saved_tool_names = parent_tool_names
-    return child
 
 def _parent_finalization_lock(parent_agent) -> threading.RLock:
     """Per-parent lock serializing lifecycle side effects (created once under the guard)."""

@@ -95,7 +95,7 @@ def test_batch_completion_lines_are_attributable_across_two_batches(monkeypatch,
             "error": None, "api_calls": 1, "duration_seconds": 1,
         },
     )
-    monkeypatch.setattr(dt, "_build_child_preserving_parent_tools",
+    monkeypatch.setattr(dt, "_build_child_agent",
                         lambda **kw: types.SimpleNamespace(tool_progress_callback=None))
     monkeypatch.setattr("tools.delegate_tool_routes._resolve_delegation_credentials", lambda *a, **k: {
         "model": "m", "provider": "openrouter", "base_url": "https://x/v1",

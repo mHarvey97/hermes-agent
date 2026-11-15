@@ -118,7 +118,6 @@ class _StubChild:
     """Minimal child agent double (mirrors test_delegate_kanban_isolation)."""
 
     tool_progress_callback = None
-    _delegate_saved_tool_names: list = []
     _credential_pool = None
     _subagent_id = None  # skip registry
     _delegate_depth = 1
@@ -368,7 +367,7 @@ class TestDelegateTaskDispatch:
                 },
             ),
             patch(
-                "tools.delegate_tool._build_child_preserving_parent_tools",
+                "tools.delegate_tool._build_child_agent",
                 side_effect=fake_build,
             ),
         ):

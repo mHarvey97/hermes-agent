@@ -171,10 +171,6 @@ TOOL_TO_TOOLSET_MAP: dict[str, str] = registry.get_tool_to_toolset_map()
 
 TOOLSET_REQUIREMENTS: dict[str, dict] = registry.get_toolset_requirements()
 
-# Tool names from the last get_tool_definitions() call (execute_code sandbox fallback).
-_last_resolved_tool_names: list[str] = []
-
-
 # Legacy toolset names (old _tools-suffixed names -> tool name lists)
 _LEGACY_TOOLSET_MAP = {
     "web_tools": ["web_search", "web_extract"],
@@ -262,9 +258,6 @@ def get_tool_definitions(enabled_toolsets: Optional[list[str]] = None, disabled_
                     _tool_defs_expiry.pop(evicted, None)
                 _tool_defs_cache[cache_key] = cached = result
                 _tool_defs_expiry[cache_key] = verdict_expiry[0]
-    else:
-        global _last_resolved_tool_names
-        _last_resolved_tool_names = [t["function"]["name"] for t in cached]
     # Always a shallow copy: run_agent appends memory/LCM schemas to its list; a
     # shared list would accumulate duplicate names (HTTP 400 from DeepSeek/Kimi/MiMo).
     return list(cached)
@@ -530,11 +523,8 @@ def _compute_tool_definitions(enabled_toolsets: Optional[list[str]] = None, disa
     from tools.kanban_toolset_context import scoped_kanban_toolset_selection
     with scoped_kanban_toolset_selection(enabled_toolsets):
         filtered_tools = _apply_dynamic_schemas(registry.get_definitions(tools_to_include, quiet=quiet_mode))
-    global _last_resolved_tool_names
-    _last_resolved_tool_names = [t["function"]["name"] for t in filtered_tools]
-
     if not quiet_mode:
-        print(f"🛠️  Final tool selection ({len(filtered_tools)} tools): {', '.join(_last_resolved_tool_names)}"
+        print(f"🛠️  Final tool selection ({len(filtered_tools)} tools): {', '.join(t['function']['name'] for t in filtered_tools)}"
               if filtered_tools else "🛠️  No tools selected (all filtered out or unavailable)")
     # Normalize schema shapes llama.cpp's grammar converter rejects (bare
     # "type": "object", string-valued nodes from malformed MCP servers).
@@ -856,9 +846,7 @@ def _execute_tool(function_name: str, function_args: dict[str, Any], original_ar
         "task_id": ids.task_id, "session_id": ids.session_id, "conversation_id": ids.conversation_id}
     if function_name == "execute_code":
         dispatch_kwargs["turn_id"] = ids.turn_id
-        # Prefer the caller's list so subagents can't overwrite the parent's
-        # tool set via the process-global.
-        dispatch_kwargs["enabled_tools"] = enabled_tools if enabled_tools is not None else _last_resolved_tool_names
+        dispatch_kwargs["enabled_tools"] = enabled_tools
     else:
         dispatch_kwargs["user_task"] = user_task
     from agent.plugin_session_fork import current_turn_origin
@@ -917,8 +905,8 @@ def handle_function_call(
     """Route a tool call through hooks/middleware to the registry; returns a JSON string.
 
     task_id isolates terminal/browser sessions; user_task is forwarded to every handler as a kwarg.
-    enabled_tools picks execute_code's sandbox tools (default: the process-global
-    ``_last_resolved_tool_names``). skip_pre_tool_call_hook: caller already fired
+    enabled_tools picks execute_code's sandbox tools (None: every sandbox tool, see
+    ``tools.code_execution_tool._sandbox_tools_for``). skip_pre_tool_call_hook: caller already fired
     it (single-fire contract). enabled/disabled_toolsets scope the Tool Search
     bridge catalog to this session's grant (None = unrestricted).
     """

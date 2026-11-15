@@ -70,9 +70,6 @@ Adding one: register in that table (no `if name == ...` chain); `tools/todo_tool
   (`CONTEXT_FILE_MAX_CHARS` / dynamic cap from the context window / `context_file_max_chars`).
   Never load an install-tree `AGENTS.md` as project context (PR #64611); subdirectory hints reject
   paths outside the working dir so `~/.codex/AGENTS.md` / `~/.claude/CLAUDE.md` never mix in.
-- **`_last_resolved_tool_names` is a process-global in `model_tools.py`.** `_run_single_child()`
-  in `tools/delegate_tool.py` saves/restores it around subagent execution; code reading it may see
-  a temporarily stale value during child runs.
 
 ## Compression (`agent/compression_facade.py`, `conversation_compression.py`, `turn_context_compaction.py`)
 

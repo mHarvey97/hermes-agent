@@ -286,7 +286,6 @@ class TestDelegationCleanup:
 
         child = MagicMock()
         child.session_id = "child-session"
-        child._delegate_saved_tool_names = ["tool1"]
         observed = {}
 
         def run_conversation(**_kwargs):
@@ -330,7 +329,6 @@ class TestDelegationCleanup:
         parent._active_children_lock = threading.Lock()
         child = MagicMock()
         child.session_id = "active-child-session"
-        child._delegate_saved_tool_names = ["tool1"]
         child.run_conversation.side_effect = RuntimeError("test abort")
         parent._active_children.append(child)
         relay_host = MagicMock()
@@ -374,7 +372,6 @@ class TestDelegationCleanup:
         parent._active_children_lock = threading.Lock()
         child = MagicMock()
         child.session_id = "timed-out-child"
-        child._delegate_saved_tool_names = ["tool1"]
         child.get_activity_summary.return_value = {"api_call_count": 1}
         parent._active_children.append(child)
         relay_host = MagicMock()

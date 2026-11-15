@@ -188,7 +188,7 @@ class TestOwnerRefusalMidBatch(unittest.TestCase):
         built = MagicMock()
         parent = _make_mock_parent()
         refusal = ValueError("the gateway owner refused another subagent")
-        with patch("tools.delegate_tool._build_child_preserving_parent_tools", side_effect=[built, refusal]), \
+        with patch("tools.delegate_tool._build_child_agent", side_effect=[built, refusal]), \
                 patch("tools.delegate_tool._run_single_child") as mock_run:
             result = json.loads(delegate_task(tasks=[{"goal": GOOD_A}, {"goal": GOOD_B}], parent_agent=parent))
         self.assertIn("refused another subagent", result["error"])

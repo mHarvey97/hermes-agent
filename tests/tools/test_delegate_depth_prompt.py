@@ -38,7 +38,6 @@ def test_dispatched_child_prompt_matches_depth_capability(
     parent.thinking_callback = None
     child = MagicMock()
     child._credential_pool = None
-    child._delegate_saved_tool_names = []
     child.session_prompt_tokens = 0
     child.session_completion_tokens = 0
     child.model = "fixture"

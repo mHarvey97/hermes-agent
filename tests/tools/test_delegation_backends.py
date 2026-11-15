@@ -95,7 +95,7 @@ def recorded(monkeypatch):
         built.append(kwargs)
         return types.SimpleNamespace(tool_progress_callback=None, model=kwargs.get("model"))
 
-    monkeypatch.setattr(dt, "_build_child_preserving_parent_tools", build)
+    monkeypatch.setattr(dt, "_build_child_agent", build)
     monkeypatch.setattr(dt, "_run_single_child", lambda task_index, goal, child=None, parent_agent=None, **kw: {
         "task_index": task_index, "status": "completed", "summary": "ok", "api_calls": 1, "duration_seconds": 0})
     return built

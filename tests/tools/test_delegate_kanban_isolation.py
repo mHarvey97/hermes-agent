@@ -308,7 +308,6 @@ def test_child_attempting_default_complete_does_not_finish_parent_or_delete_work
 
     class Child:
         tool_progress_callback = None
-        _delegate_saved_tool_names = []
         _credential_pool = None
         _subagent_id = "sa-test"
         _delegate_depth = 1

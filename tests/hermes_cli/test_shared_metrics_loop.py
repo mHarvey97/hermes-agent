@@ -206,7 +206,7 @@ def test_delegate_task_call_is_one_row_however_many_children(home, monkeypatch):
         "task_index": task_index, "status": next(statuses), "summary": "ok", "error": None, "api_calls": 1,
         "duration_seconds": 1,
     })
-    monkeypatch.setattr(dt, "_build_child_preserving_parent_tools", lambda **kw: types.SimpleNamespace(tool_progress_callback=None))
+    monkeypatch.setattr(dt, "_build_child_agent", lambda **kw: types.SimpleNamespace(tool_progress_callback=None))
     monkeypatch.setattr("tools.delegate_tool_routes._resolve_delegation_credentials", lambda *a, **k: {
         "model": "m", "provider": "openrouter", "base_url": "https://x/v1", "api_key": "k", "api_mode": "chat_completions",
     })
