@@ -1543,7 +1543,3 @@ def check_execute_code_guard(code: str, env_type: str, has_host_access: bool = F
         smart=approval_mode == "smart",
         pending_body=lambda: f"**Code:**\n```python\n{redact_approval_display(code)}\n```",
     )
-
-
-# Load permanent allowlist from config on module import
-load_permanent_allowlist()

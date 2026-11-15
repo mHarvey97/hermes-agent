@@ -1,8 +1,7 @@
 """`command_allowlist` is a file the operator edits; a save must not clobber it.
 
-`load_permanent_allowlist()` runs once, at module import (tools/approval.py, the
-call at the bottom of the module), and `load_permanent()` only ever unions into
-`_permanent_approved` — nothing removes. `save_permanent_allowlist()` then wrote
+`load_permanent_allowlist()` ran once, at module import, and `load_permanent()`
+only ever unioned into `_permanent_approved` — nothing removed. `save_permanent_allowlist()` then wrote
 that in-memory set straight back over `config["command_allowlist"]`.
 
 So a hand edit made while a Hermes process is live was undone by the next
