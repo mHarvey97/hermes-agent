@@ -28,6 +28,7 @@ from typing import Optional
 from agent.file_safety import is_project_env_basename
 from gateway.platforms.base import (
     _MEDIA_DELIVERY_DENIED_HOME_SUBPATHS, _MEDIA_DELIVERY_DENIED_PREFIXES, _ROOT_CREDENTIAL_PATHS)
+from tools.terminal_tool_config import _is_remote_backend
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +67,11 @@ def remote_path_is_denied(path: str, remote_home: Optional[str]) -> bool:
 def _active_remote_env():
     """The live remote BaseEnvironment for the current session, or None (local backend / no env yet).
     Keyed by the session id the turn registered its sandbox under (falls back to the session key)."""
-    from agent.prompt_builder import _REMOTE_TERMINAL_BACKENDS, _plugin_backend_is_remote
     from gateway.platforms.base import _tenv
     from gateway.session_context import get_session_env
     from tools.terminal_tool_lifecycle import get_active_env
     backend = _tenv("TERMINAL_ENV", "local").strip().lower()
-    if backend not in _REMOTE_TERMINAL_BACKENDS and not _plugin_backend_is_remote(backend):
+    if not _is_remote_backend(backend):
         return None
     return get_active_env(get_session_env("HERMES_SESSION_ID") or get_session_env("HERMES_SESSION_KEY") or "default")
 

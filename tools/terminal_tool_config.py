@@ -154,6 +154,7 @@ def cwd_follows_host_mount(cwd: str, mount: str) -> bool:
 
 _CONTAINER_BACKENDS = frozenset({"docker", "modal", "daytona", "vercel_sandbox"})
 _BUILTIN_BACKENDS = _CONTAINER_BACKENDS | {"local", "ssh", "managed_modal"}
+_REMOTE_BACKENDS = _BUILTIN_BACKENDS - {"local"}
 
 
 def _plugin_registry_lookup(env_type: str, fn_name: str, default, *args):
@@ -179,6 +180,11 @@ def _plugin_env_flag(env_type: str, attr: str, default=False):
 def _is_container_backend(env_type: str) -> bool:
     """True for built-in container backends and plugins declaring ``is_container``."""
     return env_type in _CONTAINER_BACKENDS or _plugin_env_flag(env_type, "is_container")
+
+
+def _is_remote_backend(env_type: str) -> bool:
+    """True for built-in backends other than local and plugins declaring ``is_remote``."""
+    return env_type in _REMOTE_BACKENDS or bool(_plugin_env_flag(env_type, "is_remote"))
 
 
 def _get_plugin_env_provider(env_type: str):

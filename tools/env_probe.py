@@ -14,6 +14,7 @@ import threading
 from typing import Optional
 
 from hermes_cli._subprocess_compat import windows_hide_flags
+from tools.terminal_tool_config import _is_remote_backend
 
 logger = logging.getLogger(__name__)
 
@@ -30,26 +31,6 @@ _PROBE_THREAD: Optional[threading.Thread] = None
 _PROBE_GEN = 0  # bumped on reset so a stale worker can't publish into the fresh generation
 _PROBE_WAIT_TIMEOUT = 10.0  # healthy runtime ~0.5s
 _WAIT_ALREADY_TIMED_OUT = False  # after one full wait, later callers only peek
-
-# Keep in sync with agent/prompt_builder.py:_REMOTE_TERMINAL_BACKENDS.
-# Duplicated rather than imported to avoid a circular import.
-_REMOTE_BACKENDS = frozenset({
-    "docker", "modal", "daytona", "ssh", "managed_modal",
-    "vercel_sandbox",
-})
-
-
-def _plugin_backend_is_remote(backend: str) -> bool:
-    """Whether a plugin-registered terminal backend is remote (fail-soft)."""
-    if not backend or backend in _REMOTE_BACKENDS or backend == "local":
-        return False
-    try:
-        from agent.terminal_env_registry import provider_flag
-
-        return bool(provider_flag(backend, "is_remote", False))
-    except Exception:
-        return False
-
 
 def _run(cmd: list[str], timeout: float = 3.0) -> tuple[int, str, str]:
     """Run a short subprocess -> (returncode, stdout, stderr); failures (binary
@@ -182,7 +163,7 @@ def get_environment_probe_line() -> str:
     # — the cached line describes the HOST toolchain.
     # See #68559.
     backend = _resolve_terminal_backend()
-    if backend in _REMOTE_BACKENDS or _plugin_backend_is_remote(backend):
+    if _is_remote_backend(backend):
         return ""
     if _PROBE_DONE.is_set():
         return _CACHED_LINE or ""

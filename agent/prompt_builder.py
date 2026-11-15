@@ -28,6 +28,7 @@ from agent.skill_utils import (
     iter_skill_index_files, parse_frontmatter, skill_matches_apps, skill_matches_environment,
     skill_matches_platform, skill_matches_platform_list,
 )
+from tools.terminal_tool_config import _is_remote_backend
 from tools.threat_patterns import scan_for_threats as _scan_for_threats
 from utils import atomic_json_write, file_cache_version
 
@@ -745,10 +746,6 @@ WSL_ENVIRONMENT_HINT = (
 )
 
 
-# Backends that run commands (and every file tool) in a separate container / remote host: host OS/$HOME/cwd
-# would mislead, so the agent only sees the machine it can touch.
-_REMOTE_TERMINAL_BACKENDS = frozenset({"docker", "modal", "daytona", "ssh", "vercel_sandbox", "managed_modal"})
-
 # Used when the live probe fails: only what the backend choice implies — never an invented cwd/user/$HOME.
 _BACKEND_FALLBACK_DESCRIPTIONS: dict[str, str] = {
     "docker": "a Docker container (Linux)",
@@ -772,12 +769,6 @@ def _plugin_backend_attr(backend: str, attr: str, default=None):
         return provider_flag(backend, attr, default)
     except Exception:
         return default
-
-
-def _plugin_backend_is_remote(backend: str) -> bool:
-    """Whether a plugin-registered terminal backend runs commands remotely (unknown names are local)."""
-    return bool(backend and backend != "local" and backend not in _REMOTE_TERMINAL_BACKENDS
-                and _plugin_backend_attr(backend, "is_remote", False))
 
 
 def _windows_marketing_version() -> str:
@@ -1023,7 +1014,9 @@ def build_environment_hints() -> str:
     backends get ONLY the backend's own state (the agent's tools cannot touch the host).
     WSL and embedder hints are appended."""
     backend = (_tenv_read("TERMINAL_ENV") or "local").strip().lower()
-    is_remote_backend = backend in _REMOTE_TERMINAL_BACKENDS or _plugin_backend_is_remote(backend)
+    # A remote backend runs commands (and every file tool) in a separate container / host: host
+    # OS/$HOME/cwd would mislead, so the agent only sees the machine it can touch.
+    is_remote_backend = _is_remote_backend(backend)
     hints = [_remote_backend_hint(backend)] if is_remote_backend else _local_host_hints()
     # A host-placed Bot Screen is only reachable from a local backend (a sandboxed terminal cannot
     # open windows on the gateway host), and a sandbox-placed one is the sandbox probe's business.
