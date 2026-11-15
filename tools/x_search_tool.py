@@ -338,5 +338,4 @@ def _handle_x_search(args, **kw):
 registry.register(
     name="x_search", toolset="x_search", schema=X_SEARCH_SCHEMA, handler=_handle_x_search,
     check_fn=check_x_search_requirements, requires_env=["XAI_API_KEY"], emoji="🐦",
-    max_result_size_chars=100_000,
 )

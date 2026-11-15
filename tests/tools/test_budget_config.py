@@ -1,7 +1,7 @@
 """Unit tests for tools/budget_config.py.
 
 Covers default values, resolve_threshold() priority chain
-(pinned > tool_overrides > registry > default), immutability,
+(pinned > mcp_ prefix > registry > default), immutability,
 and the PINNED_THRESHOLDS escape-hatch for read_file.
 """
 
@@ -53,27 +53,20 @@ from tools.budget_config import (
 
 
 class TestResolveThreshold:
-    """Priority: pinned > tool_overrides > registry > default."""
+    """Priority: pinned > mcp_ prefix > registry > default."""
 
-    def test_pinned_wins_over_override(self):
-        """Even if tool_overrides contains read_file, pinned value wins."""
-        cfg = BudgetConfig(tool_overrides={"read_file": 1})
-        result = cfg.resolve_threshold("read_file")
-        assert result == float("inf")
-
-    def test_tool_override_wins_over_default(self):
-        """tool_overrides should be returned before falling back to registry."""
-        cfg = BudgetConfig(tool_overrides={"my_tool": 42})
-        result = cfg.resolve_threshold("my_tool")
-        assert result == 42
+    def test_pinned_wins_over_scaled_default(self):
+        """read_file stays unbounded even under a tiny scaled budget."""
+        cfg = BudgetConfig(default_result_size=1)
+        assert cfg.resolve_threshold("read_file") == float("inf")
 
 
     @patch("tools.registry.registry")
     def test_registry_value_capped_at_default(self, mock_registry):
         """A scaled-down budget caps an oversized registry value (#23767).
 
-        web/terminal/x_search register max_result_size_chars=100_000; a small
-        model's scaled budget must not be re-inflated by that.
+        A per-tool registry value above the scaled budget must not re-inflate a
+        small model's cap.
         """
         mock_registry.get_max_result_size.return_value = 100_000
         cfg = BudgetConfig(default_result_size=30_000)
@@ -133,10 +126,6 @@ class TestMcpPrefixThreshold:
     def test_pinned_wins_over_mcp_prefix(self):
         with patch.dict(PINNED_THRESHOLDS, {"mcp_pinned_tool": float("inf")}):
             assert DEFAULT_BUDGET.resolve_threshold("mcp_pinned_tool") == float("inf")
-
-    def test_tool_override_wins_over_mcp_prefix(self):
-        cfg = BudgetConfig(tool_overrides={"mcp_special": 75_000})
-        assert cfg.resolve_threshold("mcp_special") == 75_000
 
     def test_mcp_threshold_capped_by_scaled_default(self):
         """On a small model the scaled default_result_size caps the MCP value."""

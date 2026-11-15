@@ -987,6 +987,5 @@ def _execute_code_handler(args: dict, **kwargs) -> str:
 registry.register(
     name="execute_code", toolset="code_execution", schema=EXECUTE_CODE_SCHEMA,
     handler=_execute_code_handler, check_fn=check_sandbox_requirements, emoji="🐍",
-    max_result_size_chars=100_000,
     compat_args=("command",), self_checked_args=("code",),  # the handler redirects shell mix-ups to terminal
 )
