@@ -4,12 +4,14 @@ shape stays what the array envelope produced, and an older gateway still works t
 
 import json
 import logging
+from datetime import UTC, datetime, timedelta
+from email.utils import format_datetime
 
 import pytest
 
 from tools.connectors.gateway import client as client_module
 from tools.connectors.gateway.client import ConnectorClient
-from tools.connectors.gateway.errors import GatewayAuthError
+from tools.connectors.gateway.errors import GatewayAuthError, RateLimited
 from tools.connectors.gateway.merge import partition_calls, splice_remote_results
 from tools.connectors.gateway.wire import EXECUTE_ERROR_CODES
 from tools.connectors.turn import CARD, LINK, SIDE, scoped_connection_surface
@@ -180,6 +182,30 @@ def test_429_without_a_usable_retry_after_is_returned_not_retried(headers):
     (result,) = make_client(transport).execute(planned())
     assert result["error"]["code"] == "PROVIDER_RATE_LIMITED"
     assert len(transport.requests) == 1
+
+
+def http_date_in(seconds):
+    return format_datetime(datetime.now(UTC) + timedelta(seconds=seconds), usegmt=True)
+
+
+def test_429_with_a_short_http_date_retry_after_waits_and_retries():
+    sleeps = []
+    ok = FakeResponse(200, {"result": {"data": "sent"}})
+    limited = FakeResponse(429, {"code": "PROVIDER_RATE_LIMITED", "family": "backend", "message": "slow"},
+                           {"Retry-After": http_date_in(5)})
+    transport = FakeTransport(limited, ok)
+    (result,) = make_client(transport, sleeps).execute(planned())
+    assert result == {"data": "sent", "error": None}
+    assert len(sleeps) == 1 and 3 <= sleeps[0] <= 5
+    assert len(transport.requests) == 2
+
+
+def test_a_route_429_with_an_http_date_retry_after_is_rate_limited():
+    limited = FakeResponse(429, {"error": {"code": "RATE_LIMITED", "message": "slow down"}},
+                           {"Retry-After": http_date_in(120)})
+    with pytest.raises(RateLimited) as caught:
+        make_client(FakeTransport(limited)).execute(planned())
+    assert 115 <= caught.value.retry_after <= 120
 
 
 def test_product_failures_are_never_retried():

@@ -15,6 +15,7 @@ from typing import Any, Callable, Mapping, Optional, Protocol, Sequence
 import requests
 from pydantic import ValidationError
 
+from agent.retry_utils import parse_retry_after_seconds
 from tools.connectors.gateway import wire
 from tools.connectors.gateway.config import session_platform
 from tools.connectors.gateway.errors import (
@@ -544,12 +545,8 @@ def _retry_wait(status: int, headers: Optional[Mapping[str, Any]]) -> Optional[f
         return 0.0
     if status != 429:
         return None
-    raw = (headers or {}).get("Retry-After")
-    try:
-        wait = float(raw)
-    except (TypeError, ValueError):
-        return None
-    return wait if 0 <= wait <= _MAX_RETRY_AFTER_SECONDS else None
+    wait = parse_retry_after_seconds(headers)
+    return wait if wait is not None and wait <= _MAX_RETRY_AFTER_SECONDS else None
 
 
 def _safe_json(response: Any) -> Any:

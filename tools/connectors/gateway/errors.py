@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Optional
 
+from agent.retry_utils import parse_retry_after_seconds
 from tools.connectors.turn import CARD, LINK, SIDE
 
 __all__ = [
@@ -100,8 +101,9 @@ def parse_gateway_error(status: int, body: Any, headers: Optional[Mapping[str, A
     if status == 409:
         return IdempotencyConflict(message, **kwargs)
     if status == 429:
-        header = (headers or {}).get("Retry-After") if headers else None
-        retry_after = float(header) if header not in (None, "") else (retry_after_ms or 1000.0) / 1000.0
+        retry_after = parse_retry_after_seconds(headers)
+        if retry_after is None:
+            retry_after = (retry_after_ms or 1000.0) / 1000.0
         return RateLimited(message, retry_after=retry_after, **kwargs)
     return ToolGatewayError(message, retryable=status >= 500, **kwargs)
 
