@@ -57,7 +57,7 @@ def owner(monkeypatch, tmp_path):
     import hermes_cli.gateway_runtime_discovery as discovery
 
     state = SimpleNamespace(connections=0, tickets=0, requests=[], drop=None, closed=threading.Event(),
-                            pongs=[], flooded=threading.Event(), relay=None, live=None)
+                            pongs=[], flooded=threading.Event(), relay=None, live=None, persist=None)
 
     def handler(ws):
         state.connections += 1
@@ -76,8 +76,10 @@ def owner(monkeypatch, tmp_path):
                 ws.send(json.dumps({'jsonrpc': '2.0', 'id': request['id'],
                                     'error': {'code': -32000, 'message': 'stale_generation'}}))
                 continue
-            ws.send(json.dumps({'jsonrpc': '2.0', 'id': request['id'],
-                                'result': {'n': len(state.requests), **request.get('params', {})}}))
+            result = (state.persist(request['params'])
+                      if request['method'] == 'worker.persist' and state.persist is not None
+                      else {'n': len(state.requests), **request.get('params', {})})
+            ws.send(json.dumps({'jsonrpc': '2.0', 'id': request['id'], 'result': result}))
             if request['method'] == 'flood':
                 # sessions.changed keeps flowing while the worker is busy in a model call; the owner's
                 # keepalive then needs a pong, which a worker that stopped reading never sends.
